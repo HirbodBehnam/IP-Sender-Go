@@ -26,10 +26,10 @@ type proxyConfig struct {
 
 var Verbose = false
 
-const Version  = "1.0.0 / Build 1"
+const Version = "1.0.0 / Build 1"
 
 func main() {
-	var	ConfigFileName string
+	var ConfigFileName string
 	{ //Parse arguments
 		configFileName := flag.String("config", "config.json", "The config filename")
 		verbose := flag.Bool("v", false, "Verbose mode")
@@ -68,9 +68,9 @@ func main() {
 	}
 
 	//Set proxy if needed
-	if Config.Proxy.Type != ""{
-		err := os.Setenv("HTTP_PROXY", Config.Proxy.Type + "://" + Config.Proxy.Host)
-		if err != nil{
+	if Config.Proxy.Type != "" {
+		err := os.Setenv("HTTP_PROXY", Config.Proxy.Type+"://"+Config.Proxy.Host)
+		if err != nil {
 			panic(err.Error())
 		}
 	}
@@ -94,38 +94,44 @@ func main() {
 
 		h := sha256.New()
 		h.Write([]byte(update.Message.Text))
-		if hex.EncodeToString(h.Sum(nil)) == Config.Pass{ //Hash the password and check it with the one user specified
+		if hex.EncodeToString(h.Sum(nil)) == Config.Pass { //Hash the password and check it with the one user specified
 			go func(chatID int64) {
 				msg := tgbotapi.NewMessage(chatID, "")
 				page := "https://api.ipify.org"
 				tr := &http.Transport{ //Use this to do not use proxy
-					Proxy:nil,
+					Proxy: nil,
 				}
 				client := &http.Client{Transport: tr}
 				res, err := client.Get(page)
 				if err != nil {
 					msg.Text = "Error receiving IP:" + err.Error()
-					log.Println("Error receiving IP:",err.Error())
-				}else{
+					if Verbose {
+						log.Println("Error receiving IP:", err.Error())
+					}
+				} else {
 					ip, err := ioutil.ReadAll(res.Body)
 					if err != nil {
-						log.Println("Error reading web page:", err.Error())
 						msg.Text = "Error reading web page: " + err.Error()
-					}else{
+						if Verbose {
+							log.Println("Error reading web page:", err.Error())
+						}
+					} else {
 						msg.Text = string(ip)
 					}
 				}
-				_ , err = bot.Send(msg)
-				if err != nil{
-					log.Println("Error sending IP:" , err.Error())
+				_, err = bot.Send(msg)
+				if err != nil && Verbose {
+					log.Println("Error sending IP:", err.Error())
 				}
 			}(update.Message.Chat.ID)
-		}else{ //Password does not match
+		} else { //Password does not match
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Invalid password")
-			log.Println("Invalid password from",update.Message.From.LastName,update.Message.From.LastName,", Username",update.Message.From.UserName,",ID",update.Message.From.ID)
-			_ , err = bot.Send(msg)
-			if err != nil{
-				log.Println("Error sending IP:" , err.Error())
+			if Verbose {
+				log.Println("Invalid password from", update.Message.From.LastName, update.Message.From.LastName, ", Username", update.Message.From.UserName, ",ID", update.Message.From.ID)
+			}
+			_, err = bot.Send(msg)
+			if err != nil && Verbose {
+				log.Println("Error sending IP:", err.Error())
 			}
 		}
 	}
