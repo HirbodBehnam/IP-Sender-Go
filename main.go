@@ -44,7 +44,7 @@ func main() {
 
 		if *help {
 			fmt.Println("Created by Hirbod Behnam")
-			fmt.Println("Source at https://github.com/HirbodBehnam/PortForwarder")
+			fmt.Println("Source at https://github.com/HirbodBehnam/IP-Sender-Go")
 			fmt.Println("Version", Version)
 			flag.PrintDefaults()
 			os.Exit(0)
@@ -95,7 +95,7 @@ func main() {
 		h := sha256.New()
 		h.Write([]byte(update.Message.Text))
 		if hex.EncodeToString(h.Sum(nil)) == Config.Pass { //Hash the password and check it with the one user specified
-			go func(chatID int64) {
+			go func(chatID int64, firstName, lastName string) {
 				msg := tgbotapi.NewMessage(chatID, "")
 				page := "https://api.ipify.org"
 				tr := &http.Transport{ //Use this to do not use proxy
@@ -119,15 +119,18 @@ func main() {
 						msg.Text = string(ip)
 					}
 				}
+				if Verbose {
+					log.Println("Error sending IP to ID", chatID, "; Name:", firstName, lastName)
+				}
 				_, err = bot.Send(msg)
 				if err != nil && Verbose {
 					log.Println("Error sending IP:", err.Error())
 				}
-			}(update.Message.Chat.ID)
+			}(update.Message.Chat.ID, update.Message.From.FirstName, update.Message.From.LastName)
 		} else { //Password does not match
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Invalid password")
 			if Verbose {
-				log.Println("Invalid password from", update.Message.From.LastName, update.Message.From.LastName, ", Username", update.Message.From.UserName, ",ID", update.Message.From.ID)
+				log.Println("Invalid password from", update.Message.From.FirstName, update.Message.From.LastName, ", Username", update.Message.From.UserName, ",ID", update.Message.From.ID)
 			}
 			_, err = bot.Send(msg)
 			if err != nil && Verbose {
