@@ -105,37 +105,35 @@ func main() {
 				res, err := client.Get(page)
 				if err != nil {
 					msg.Text = "Error receiving IP:" + err.Error()
-					if Verbose {
-						log.Println("Error receiving IP:", err.Error())
-					}
+					LogVerbose("Error receiving IP:", err.Error())
 				} else {
 					ip, err := ioutil.ReadAll(res.Body)
 					if err != nil {
 						msg.Text = "Error reading web page: " + err.Error()
-						if Verbose {
-							log.Println("Error reading web page:", err.Error())
-						}
+						LogVerbose("Error reading web page:", err.Error())
 					} else {
 						msg.Text = string(ip)
 					}
-				}
-				if Verbose {
-					log.Println("Error sending IP to ID", chatID, "; Name:", firstName, lastName)
+					LogVerbose("Sending IP to ID", chatID, "; Name:", firstName, lastName)
 				}
 				_, err = bot.Send(msg)
-				if err != nil && Verbose {
-					log.Println("Error sending IP:", err.Error())
+				if err != nil {
+					LogVerbose("Error sending IP:", err.Error())
 				}
 			}(update.Message.Chat.ID, update.Message.From.FirstName, update.Message.From.LastName)
 		} else { //Password does not match
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Invalid password")
-			if Verbose {
-				log.Println("Invalid password from", update.Message.From.FirstName, update.Message.From.LastName, ", Username", update.Message.From.UserName, ",ID", update.Message.From.ID)
-			}
+			LogVerbose("Invalid password from", update.Message.From.FirstName, update.Message.From.LastName, ", Username", update.Message.From.UserName, ",ID", update.Message.From.ID)
 			_, err = bot.Send(msg)
-			if err != nil && Verbose {
-				log.Println("Error sending IP:", err.Error())
+			if err != nil {
+				LogVerbose("Error sending IP:", err.Error())
 			}
 		}
+	}
+}
+
+func LogVerbose(v ...interface{}) {
+	if Verbose {
+		log.Println(v)
 	}
 }
