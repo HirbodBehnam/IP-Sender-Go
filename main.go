@@ -24,7 +24,7 @@ type proxyConfig struct {
 
 var Verbose = false
 
-const Version = "1.0.0 / Build 1"
+const Version = "1.1.0 / Build 2"
 
 func main() {
 	var ConfigFileName string
