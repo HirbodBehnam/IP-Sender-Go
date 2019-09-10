@@ -1,6 +1,6 @@
 {
   "Token": "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
-  "Pass": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb",
+  "Pass": "$2a$14$lrdPwCBQzrL0blC11Bq2JeRMU7hVXh0f5lhGlQkSXj6O77D86Uq5a",
   "Proxy": {
     "Type": "socks5",
     "Host": "127.0.0.1:1080"

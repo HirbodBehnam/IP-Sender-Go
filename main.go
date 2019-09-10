@@ -1,17 +1,15 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 type config struct {
@@ -32,15 +30,10 @@ func main() {
 	var ConfigFileName string
 	{ //Parse arguments
 		configFileName := flag.String("config", "config.json", "The config filename")
+		pass := flag.String("hash", "", "Pass a password with this to generate the hashed password.")
 		verbose := flag.Bool("v", false, "Verbose mode")
 		help := flag.Bool("h", false, "Show help")
 		flag.Parse()
-
-		Verbose = *verbose
-		if Verbose {
-			fmt.Println("Verbose mode on")
-		}
-		ConfigFileName = *configFileName
 
 		if *help {
 			fmt.Println("Created by Hirbod Behnam")
@@ -49,6 +42,19 @@ func main() {
 			flag.PrintDefaults()
 			os.Exit(0)
 		}
+
+		if *pass != "" { //Hash the password and print it for user
+			fmt.Println("Generating hash for:", *pass)
+			b, _ := bcrypt.GenerateFromPassword([]byte(*pass), 14)
+			fmt.Println(string(b))
+			os.Exit(0)
+		}
+
+		Verbose = *verbose
+		if Verbose {
+			fmt.Println("Verbose mode on")
+		}
+		ConfigFileName = *configFileName
 	}
 
 	//Parse config file
@@ -63,8 +69,6 @@ func main() {
 		if err != nil {
 			panic("Cannot read the config file. (Parse Error) " + err.Error())
 		}
-
-		Config.Pass = strings.ToLower(Config.Pass)
 	}
 
 	//Set proxy if needed
@@ -92,9 +96,7 @@ func main() {
 			continue
 		}
 
-		h := sha256.New()
-		h.Write([]byte(update.Message.Text))
-		if hex.EncodeToString(h.Sum(nil)) == Config.Pass { //Hash the password and check it with the one user specified
+		if err = bcrypt.CompareHashAndPassword([]byte(Config.Pass), []byte(update.Message.Text)); err == nil { //Hash the password and check it with the one user specified
 			go func(chatID int64, firstName, lastName string) {
 				msg := tgbotapi.NewMessage(chatID, "")
 				page := "https://api.ipify.org"
