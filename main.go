@@ -24,6 +24,7 @@ type proxyConfig struct {
 
 var Verbose = false
 var ConfigFileName string
+var HttpClient = &http.Client{Transport: &http.Transport{Proxy: nil}} //Use this to do not use proxy
 
 const Version = "1.1.1 / Build 3"
 const SERVICE = "https://api.ipify.org"
@@ -96,8 +97,7 @@ func main() {
 		if err = bcrypt.CompareHashAndPassword([]byte(Config.Pass), []byte(update.Message.Text)); err == nil { //Hash the password and check it with the one user specified
 			go func(chatID int64, firstName, lastName string) {
 				msg := tgbotapi.NewMessage(chatID, "")
-				client := &http.Client{Transport: &http.Transport{Proxy: nil}} //Use this to do not use proxy
-				res, err := client.Get(SERVICE)
+				res, err := HttpClient.Get(SERVICE)
 				if err != nil {
 					msg.Text = "Error receiving IP:" + err.Error()
 					LogVerbose("Error receiving IP:", err.Error())
