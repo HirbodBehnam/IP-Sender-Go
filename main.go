@@ -23,15 +23,16 @@ type proxyConfig struct {
 }
 
 var Verbose = false
+var ConfigFileName string
 
-const Version = "1.1.0 / Build 2"
+const Version = "1.1.1 / Build 3"
+const SERVICE = "https://api.ipify.org"
 
 func main() {
-	var ConfigFileName string
 	{ //Parse arguments
-		configFileName := flag.String("config", "config.json", "The config filename")
+		flag.StringVar(&ConfigFileName, "config", "config.json", "The config filename")
 		pass := flag.String("hash", "", "Pass a password with this to generate the hashed password.")
-		verbose := flag.Bool("v", false, "Verbose mode")
+		flag.BoolVar(&Verbose, "v", false, "Verbose mode")
 		help := flag.Bool("h", false, "Show help")
 		flag.Parse()
 
@@ -50,11 +51,7 @@ func main() {
 			os.Exit(0)
 		}
 
-		Verbose = *verbose
-		if Verbose {
-			fmt.Println("Verbose mode on")
-		}
-		ConfigFileName = *configFileName
+		LogVerbose("Verbose mode on")
 	}
 
 	//Parse config file
@@ -62,12 +59,12 @@ func main() {
 	{
 		confF, err := ioutil.ReadFile(ConfigFileName)
 		if err != nil {
-			panic("Cannot read the config file. (io Error) " + err.Error())
+			log.Fatal("Cannot read the config file. (io Error):", err.Error())
 		}
 
 		err = json.Unmarshal(confF, &Config)
 		if err != nil {
-			panic("Cannot read the config file. (Parse Error) " + err.Error())
+			log.Fatal("Cannot read the config file. (Parse Error):", err.Error())
 		}
 	}
 
@@ -82,7 +79,7 @@ func main() {
 	//Start the bot
 	bot, err := tgbotapi.NewBotAPI(Config.Token)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal("Cannot start bot:", err.Error())
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -99,12 +96,8 @@ func main() {
 		if err = bcrypt.CompareHashAndPassword([]byte(Config.Pass), []byte(update.Message.Text)); err == nil { //Hash the password and check it with the one user specified
 			go func(chatID int64, firstName, lastName string) {
 				msg := tgbotapi.NewMessage(chatID, "")
-				page := "https://api.ipify.org"
-				tr := &http.Transport{ //Use this to do not use proxy
-					Proxy: nil,
-				}
-				client := &http.Client{Transport: tr}
-				res, err := client.Get(page)
+				client := &http.Client{Transport: &http.Transport{Proxy: nil}} //Use this to do not use proxy
+				res, err := client.Get(SERVICE)
 				if err != nil {
 					msg.Text = "Error receiving IP:" + err.Error()
 					LogVerbose("Error receiving IP:", err.Error())
